@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="gongtudata">
+
+	<sql id="base_column_gongtudata">
+		ID,sgt,jh,csrq,cssj,gtxh,cc,cc1,zdzh,zxzh,llzdzh,llzxzh,jsjg,jsr,fxs,lxs,axs,csr,shr,bj,bz,km,dm,ny,bxh,yqmc,yqxh,yqbh,yy,rcyl1,hs,rcql,sxdl,xxdl,gtlb,gtjcb,lsl,jsdm,kztsx,fcj,csdw,gtds,xdzdzh,xdzxzh,
+		yzz,gzz,sccc,sccc1,llpl,
+		bs,bx,cmd,cyggg1,cygcd1,cyggg2,cyggg2,cyggg3,cyggg3,cyggg4,cygcd4,fcbz,
+		shbz,wgrq, dym,zdllzh,zxllzh,jx, gtshbz ,bhgsm,gtgif
+	</sql>
+
+	<!-- 查询功图数据 byID -->
+	<select id="getGongtuDataByID" parameterType="Integer"
+		resultType="GongTuData">
+		<!-- 检索sql文 -->
+		select
+		<include refid="base_column_gongtudata" />
+		from gongtudata
+		where ID = #{id};
+	</select>
+
+	<!-- 查询功图数据 时间范围 -->
+	<select id="getGongtuDataByTimeRange" parameterType="java.util.Map"
+		resultType="GongTuData">
+		<!-- 检索sql文 -->
+		select
+		<include refid="base_column_gongtudata" />
+		from gongtudata
+			<trim prefix="WHERE" prefixOverrides="AND|OR">
+			<if test="name!=null">
+			 and jh = #{name} 
+			</if>
+			<if test="date!=null">
+			 and csrq = #{date}
+			</if>
+		</trim>
+	</select>
+
+</mapper>  
+

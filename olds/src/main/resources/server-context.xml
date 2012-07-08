@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+		http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.0.xsd">
+
+	<!-- properties file -->
+	<beans:bean id="propertyConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<beans:property name="locations">
+			<beans:list>
+				<beans:value>classpath:jdbc.properties</beans:value>
+			</beans:list>
+		</beans:property>
+	</beans:bean>
+
+	<!-- 数据库连接池 -->
+	<beans:bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<beans:property name="driverClassName" value="${jdbc.driver}" />
+		<beans:property name="url" value="${jdbc.url}" />
+		<beans:property name="username" value="${jdbc.username}" />
+		<beans:property name="password" value="${jdbc.password}" />
+		<!-- 优化参考 http://agapple.iteye.com/blog/838286 -->
+		<!-- 初始化连接数 -->
+		<beans:property name="initialSize" value="5" />
+		<!-- prepared statement 池功能 -->
+		<beans:property name="poolPreparedStatements" value="true" />
+		<!-- statements的最大数量 -->
+		<beans:property name="maxOpenPreparedStatements" value="10" />
+		<!-- 最大活动连接数-->
+		<beans:property name="maxActive" value="50" />
+		<!-- 最大空闲连接数,多于此数的空闲连接将被回收-->
+		<beans:property name="maxIdle" value="10" />
+		<!-- 最小空闲连接数,空闲连接低于此时将被创建-->
+		<beans:property name="minIdle" value="5" />
+		<!-- 无连接可用，线程池等待连接归还的最长时间-->
+		<beans:property name="maxWait" value="3000" />
+		<!-- 删除泄露连接 -->
+		<beans:property name="removeAbandoned" value="true" />
+		<beans:property name="removeAbandonedTimeout" value="180" />
+		<!-- 连接验证sql语句 -->
+		<beans:property name="validationQuery" value="SELECT 1" />
+		<!-- 获取连接时验证 -->
+		<beans:property name="testOnBorrow" value="true" />
+		<!-- 空闲检查时验证 -->
+		<beans:property name="testWhileIdle" value="true" />
+		<!-- 空闲连接检查线程运行间隔 -->
+		<beans:property name="timeBetweenEvictionRunsMillis" value="3600000" />
+		<!-- 空闲连接被回收的空闲时间 -->
+		<beans:property name="minEvictableIdleTimeMillis" value="1800000" />
+	</beans:bean>
+
+	<beans:bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<beans:property name="dataSource" ref="dataSource" />
+		<beans:property name="configLocation" value="classpath:mybatis-config.xml" />
+	</beans:bean>
+
+
+	<beans:bean name="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<beans:property name="dataSource" ref="dataSource" />
+	</beans:bean>
+
+
+	<!-- 启动mybatisDao 继承SqlSessionDaoSupport 能自动获取 SqlSessionTemplate，传入methodKeyString -->
+
+	<!-- 启用事务 -->
+	<!--  tx method 需要处理 rollback-->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="save*" propagation="REQUIRED" />
+			<tx:method name="delete*" propagation="REQUIRED" />
+			<tx:method name="update*" propagation="REQUIRED" />
+		</tx:attributes>
+	</tx:advice>
+
+	<!-- tx aop -->
+	<aop:config>
+		<aop:pointcut id="serviceOperation"
+			expression="execution(* com.jianghan.olds.service..*.*(..))" /> <!--com.jianghan.osm.service包下及其子包类  -->
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="serviceOperation" />
+	</aop:config>
+
+ 	<!-- 扫描**Mapper接口，自动实现映射Mapper.xml及方法实现 scan mappers and let them be autowired -->
+	<!--  <beans:bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<beans:property name="basePackage" value="com.jianghan.olds.orm.mapper" />
+	</beans:bean> 
+	-->
+	
+	<!-- 激活annotation功能 -->
+	<context:annotation-config />
+	<!-- 激活annotation功能 -->
+	<context:spring-configured />
+
+	<!-- 扫描Service ：do not scan @Controller -->
+	<context:component-scan base-package="com.jianghan.olds">
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+
+</beans:beans>
